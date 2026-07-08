@@ -32,19 +32,7 @@
     return originalReplaceState.call(this, state, title, url);
   };
 
-  // === 3. ПЕРЕХОПИТИ window.location ЗМІНИ ===
-  const originalLocationSetter = Object.getOwnPropertyDescriptor(Location.prototype, 'href').set;
-  Object.defineProperty(window.location, 'href', {
-    set: function(value) {
-      if (navigationBlockingEnabled && value.includes("/agent/tickets/")) {
-        console.log("[Zendesk Blocker] ❌ ЗАБЛОКОВАНО window.location.href =", value);
-        return;
-      }
-      return originalLocationSetter.call(this, value);
-    }
-  });
-
-  // === 4. БЛОКУВАТИ POPSTATE СОБЫТИЯ ===
+  // === 3. БЛОКУВАТИ POPSTATE СОБЫТИЯ ===
   window.addEventListener('popstate', (e) => {
     if (navigationBlockingEnabled && window.location.href.includes("/agent/tickets/")) {
       console.log("[Zendesk Blocker] ❌ ЗАБЛОКОВАНО popstate - навертаємо назад");
@@ -53,7 +41,7 @@
     }
   }, true);
 
-  // === 5. СЛУХАТИ HASHCHANGE ===
+  // === 4. СЛУХАТИ HASHCHANGE ===
   window.addEventListener('hashchange', (e) => {
     if (navigationBlockingEnabled && window.location.href.includes("/agent/tickets/")) {
       console.log("[Zendesk Blocker] ❌ ЗАБЛОКОВАНО hashchange");
@@ -61,7 +49,7 @@
     }
   }, true);
 
-  // === 6. БЛОКУВАТИ WINDOW.OPEN ===
+  // === 5. БЛОКУВАТИ WINDOW.OPEN ===
   const originalOpen = window.open;
   window.open = function(url, target, features) {
     if (url && url.includes('/agent/tickets/')) {
@@ -71,7 +59,7 @@
     return originalOpen.call(this, url, target, features);
   };
 
-  // === 7. БЛОКУВАТИ КЛІКАННЯ НА ПОСИЛАННЯ ТІКЕТІВ ===
+  // === 6. БЛОКУВАТИ КЛІКАННЯ НА ПОСИЛАННЯ ТІКЕТІВ ===
   document.addEventListener('click', (e) => {
     if (!navigationBlockingEnabled) return;
 
@@ -88,19 +76,7 @@
     }
   }, { capture: true, passive: false });
 
-  // === 8. БЛОКУВАТИ ГОРЯЧІ КЛАВІШІ ===
-  document.addEventListener('keydown', (e) => {
-    if (!navigationBlockingEnabled) return;
-
-    // Середня кнопка миші = відкриття в новій вкладці
-    if (e.button === 1) {
-      console.log("[Zendesk Blocker] ❌ Середня кнопка заблокована");
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, { capture: true, passive: false });
-
-  // === 9. ПЕРЕВІРИТИ, ЧИ URL УЖЕ ЗМІНИВСЯ ===
+  // === 7. ПЕРЕВІРИТИ, ЧИ URL УЖЕ ЗМІНИВСЯ ===
   setInterval(() => {
     if (navigationBlockingEnabled && window.location.href.includes("/agent/tickets/")) {
       const match = window.location.href.match(/\/agent\/tickets\/(\d+)/);
@@ -112,13 +88,13 @@
     }
   }, 500);
 
-  // === 10. ПЕРЕХОПИТИ FETCH ЗАПИТИ НА АСАЙН ===
+  // === 8. ПЕРЕХОПИТИ FETCH ЗАПИТИ НА АСАЙН ===
   const originalFetch = window.fetch;
   window.fetch = async function(...args) {
     const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
     const options = args[1] || {};
     
-    // Если это запрос на обновление тикета (PUT/PATCH с assignee)
+    // Якщо це запит на обновлення тикета (PUT/PATCH з assignee)
     if (navigationBlockingEnabled && 
         url.includes('/api/') && 
         url.includes('tickets') &&
@@ -131,12 +107,12 @@
     return originalFetch.apply(this, args);
   };
 
-  // === 11. DEBUG: Логування всіх pushState викликів ===
+  // === 9. DEBUG: Логування ===
   console.log("[Zendesk Blocker] ✅ Усі перехопники встановлені на document_start");
   console.log("[Zendesk Blocker] pushState перехоплено:", !!originalPushState);
   console.log("[Zendesk Blocker] replaceState перехоплено:", !!originalReplaceState);
 
-  // === 12. ВИВЕСТИ ПОВІДОМЛЕННЯ ПРИ ЗАВАНТАЖЕННІ СТОРІНКИ ===
+  // === 10. ВИВЕСТИ ПОВІДОМЛЕННЯ ПРИ ЗАВАНТАЖЕННІ СТОРІНКИ ===
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       console.log("[Zendesk Blocker] 🟢 ГОТОВИЙ - тікети будуть заблоковані при асайні");

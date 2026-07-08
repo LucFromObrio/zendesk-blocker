@@ -1,14 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Zendesk Ticket Auto-Open Blocker",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Блокує автоматичне відкриття асайнених тікетів у Zendesk",
-  "permissions": ["scripting", "tabs"],
+  "permissions": ["scripting"],
+  "host_permissions": [
+    "https://*.zendesk.com/*"
+  ],
   "content_scripts": [
     {
       "matches": ["https://*.zendesk.com/*"],
       "js": ["content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ]
 }
